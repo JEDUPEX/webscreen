@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Web Screen</title>
+    <script>
+        let websocket;
+        let input_websocket;
+        
+        let key_actions = [];
+        let mouse_actions = [];
+        
+        function update_screen(data){
+            const screen = document.getElementById('screen');
+            const image = `<img src="${data}"/>`
+            screen.innerHTML = image;
+        }
+        window.addEventListener('DOMContentLoaded', () => {
+            // Establish the WebSocket connection to the Python server
+            websocket = new WebSocket("ws://127.0.0.1:8765/");
+            input_websocket = new WebSocket("ws://127.0.0.1:8765/input");
+
+            websocket.onopen = function (event) {
+                console.log("[open] Connection established");
+                websocket.send("Hello Server!"); // Send a message to the server
+            };
+
+            websocket.onmessage = function (event) {
+                update_screen(`${event.data}`);
+            };
+
+            websocket.onclose = function (event) {
+                if (event.wasClean) {
+                    console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+                } else {
+                    console.log('[close] Connection died!');
+                }
+            };
+
+            websocket.onerror = function (error) {
+                console.log(`[error] ${error.message}`);
+            };
+            
+            input_websocket.onopen = function (event) {
+                console.log("[open] Connection established");
+                //websocket.send("Hello Server!"); // Send a message to the server
+            };
+
+            input_websocket.onmessage = function (event) {
+                
+            };
+
+            input_websocket.onclose = function (event) {
+                if (event.wasClean) {
+                    console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+                } else {
+                    console.log('[close] Connection died!');
+                }
+            };
+
+            input_websocket.onerror = function (error) {
+                console.log(`[error] ${error.message}`);
+            };
+            
+            setInterval(() => {
+                const actions = {
+                    keyboard:key_actions,
+                    mouse:mouse_actions
+                };
+                const parsed = JSON.stringify(actions);
+                input_websocket.send(parsed);
+                key_actions = [];
+                mouse_actions = [];
+            },10)
+        });
+    </script>
+    <style>
+        img{
+            width: 95%;
+            height: 100%;
+        }
+        body{
+            background: black;
+        }
+        #screen{
+            border: 1px solid white;
+            width: 100%;
+            height: 20vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;    
+        }
+        #controls{
+            border: 1px solid white;
+            width: 100%;
+            height: 65vh;
+            display: flex;
+            justify-content: center; 
+            align-items: center;    
+        }
+        button{
+            color: black;
+            font-size: 50px;
+            border: 1px solid grey;
+            background-color: white;
+        }
+    </style>
+    <script>
+        function send_key(key){
+            const action = key.getAttribute('raw');
+            key_actions.push(action);
+        }
+        
+    </script>
+</head>
+<body>
+    <div id="screen">
+        
+    </div>
+    <br>
+    <div id="controls">
+        <button onclick="send_key(this)" raw="ctrl">
+            Close
+        </button>
+    </div>
+</body>
+</html>
